@@ -1,0 +1,55 @@
+#! /usr/bin/env python3
+
+import argparse 
+import tkinter
+
+import pylab as p
+
+from goldschmidt.magnetometer import GaussMeterGU3001D
+from goldschmidt.gui import GaussMeterGraphical
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(usage="magnetometer.py OPTIONS \n\nUse a MilliGaussMeter GU-3001D. The script might require root privileges to access /dev/ttyUSB0 (can be avoided by setting a udev rule" )
+    parser.add_argument("--npoints", help="measure n points each interval seconds",
+                        default=100000, type=int)
+    parser.add_argument("--interval", help="average over this measurement time",
+                        default=2, type=int)
+    parser.add_argument("--silent", help="suppres output",
+                        default=False, action="store_true")
+    parser.add_argument("--gui", help="show a graphical interface",
+                        default=False, action="store_true")
+    parser.add_argument("--maxpoints", help="Maximum amount of data points in the plot. Earlier values get removed",
+                        default=200, type=int)
+    parser.add_argument("--debug", help="Set loglevel to 10 (DEBUG)",
+                        default=False, action="store_true")
+
+    args = parser.parse_args()
+
+    loglevel = 20 # log_info
+    if args.debug:
+        loglevel = 10
+
+    if args.gui:
+
+        #try:
+        #    p.style.use("goldschmidt")
+        #except:
+        #    print("Can not use style file!")
+
+        window = tkinter.Tk()
+        window.title("Milli-Gauss Meter GU3001D")
+        app = GaussMeterGraphical(window, interval=args.interval,\
+                                  maxpoints=args.maxpoints,
+                                  loglevel=loglevel)
+        window.mainloop()
+
+    else:
+        meter = GaussMeterGU3001D(loglevel=loglevel)
+        for seconds, fields in meter.measure_continously(args.npoints, args.interval):
+            if not args.silent:
+                print (seconds, fields)
+
+
