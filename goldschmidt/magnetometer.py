@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """
 Read out some gaussmeter via USB connection
 """
@@ -10,6 +8,8 @@ import time
 import pylab as p
 import seaborn as sb
 import argparse
+
+from . import get_logger
 
 # example word... \r\x0241B20200000052\
 
@@ -34,6 +34,7 @@ def save_execute(func):
         except ValueError:
             return np.nan
     return wrap_f
+
 
 #@save_execute
 def decode_fields(data):
@@ -87,6 +88,7 @@ def decode_fields(data):
     mg_data = polarity*float(mg_data)
     return mg_data
 
+
 def get_unit(data):
     """
     Get the unit from a magnetometer word
@@ -124,16 +126,51 @@ class GaussMeterGU3001D(object):
     The named instrument
     """
 
-    def __init__(self, port="/dev/ttyUSB0"):
+    def __init__(self, port="/dev/ttyUSB0", loglevel=20):
         """
         Constructor needs read and write access to 
         the port
+
+        Keyword Args:
+            port (str): The virtual serial connection on a UNIX system
+            loglevel (int): 10: debug, 20: info, 30: warnlng....
         """
         self.meter = s.Serial(port) # default settings are ok
-        self.unit = None
-        print ("Meter initialized")
+        self.loglevel = loglevel
+        self.logger = get_logger(loglevel)
+        self.logger.debug("Meter initialized")
+    
+    @property
+    def unit(self):
+        """
+        Figure out the units of the meter
+        """
+        time.sleep(1)
+        some_data = self.meter.read_all()
+        some_data = some_data.split(b"\r")[0]
+        unit = None
+        while unit is None:
+            try:
+                unit = get_unit(some_data)
+            except ValueError:
+                self.logger.debug("Can not get unit from {}, trying again...".format(some_data))
+                time.sleep(2)
+                some_data = self.meter.read_all()
+                some_data = some_data.split(b"\r")[0]
+        self.logger.info("All data will be in {}".format(unit))
+        return unit    
+    
+    def measure(self):
+        """
+        Measure a single point
+        """
+        time.sleep(1) # give the meter time to acquire some data
+        data = self.meter.read_all()
+        field = decode_meter_output(data)
+        field = field.mean()
+        return field         
 
-    def measure(self, npoints, interval):
+    def measure_continously(self, npoints, interval):
         """
         Make a measurement with npoints each interval seconds
     
@@ -145,43 +182,12 @@ class GaussMeterGU3001D(object):
             silent (bool): Suppress output
 
         """
-        # find out unit
-        time.sleep(3)
-        some_data = self.meter.read_all()
-        some_data = some_data.split(b"\r")[0]
-        self.unit = None
-        while self.unit is None:
-            try:
-                self.unit = get_unit(some_data)
-            except ValueError:
-                print ("Can not get unit, trying again...")
-                time.sleep(5)
-                some_data = self.meter.read_all()
-                some_data = some_data.split(b"\r")[0]
-        print ("All data will be in {}".format(self.unit))
-            
+        print (self.unit)
         for n in range(npoints):
             data = self.meter.read_all()
             field = decode_meter_output(data)
             field = field.mean()
             time.sleep(interval)
             yield n*interval, field        
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(usage="magnetometer.py OPTIONS \n\nUse a MilliGaussMeter GU-3001D. The script might require root privileges to access /dev/ttyUSB0 (can be avoided by setting a udev rule" )
-    parser.add_argument("--npoints", help="measure n points each interval seconds",
-                        default=100000, type=int)
-    parser.add_argument("--interval", help="average over this measurement time",
-                        default=5, type=int)
-    parser.add_argument("--silent", help="suppres output",
-                        default=False, action="store_true")
-    
-
-    args = parser.parse_args()
-    meter = GaussMeterGU3001D()
-    for seconds, fields in meter.measure(args.npoints, args.interval):
-        if not args.silent:
-            print (seconds, fields)
 
  
