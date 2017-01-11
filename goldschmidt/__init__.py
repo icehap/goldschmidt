@@ -12,7 +12,7 @@ from os.path import exists as _exists
 from shutil import copy as _copy
 from datetime import datetime as _datetime
 
-__version__ = "0.0.4"
+__version__ = "0.0.12"
 __all__ = ["magnetometer","gui"]
 
 _appdir = _split(__file__)[0]
@@ -79,10 +79,9 @@ def get_logger(loglevel, logfile=None):
         fh.setFormatter(formatter)
         fh.setLevel(loglevel)
         logger.addHandler(fh)
-        firstlog = " ".join(sys.argv)
-        logger.info("Starting " + firstlog)
 
     sys.excepthook = exception_handler
+    logger.propagate = False
     return logger
 
 

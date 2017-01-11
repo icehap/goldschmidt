@@ -101,7 +101,12 @@ class GaussMeterGraphical(object):
         """
 
         secs, fields = self.line.get_data()
-        field = self.meter.measure()
+        field = None
+        try:
+            field = self.meter.measure()
+        except Exception as e:
+            self.logger.warning("Can not acquire data! {}".format(e))
+
         sec = time.monotonic() - self.start_time
 
         # make sure data in the plot is "falling over"
@@ -112,7 +117,8 @@ class GaussMeterGraphical(object):
             index = 1
 
         secs = np.append(secs[index:], sec)
-        fields = np.append(fields[index:], field)
+        if field is not None:
+            fields = np.append(fields[index:], field)
 
         datamin = min(fields)
         datamax = max(fields)

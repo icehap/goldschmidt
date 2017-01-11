@@ -146,7 +146,7 @@ class GaussMeterGU3001D(object):
         self.logger = get_logger(loglevel)
         self.logger.debug("Meter initialized")
         self.publish = publish
-        self.publish_port = port
+        self.port = port
         self._socket = None
 
     def _setup_port(self):
@@ -158,7 +158,7 @@ class GaussMeterGU3001D(object):
         """
         context = zmq.Context()
         self._socket = context.socket(zmq.PUB)
-        self._socket.bind("tcp://*:%s" % int(self.port))
+        self._socket.bind("tcp://0.0.0.0:%s" % int(self.port))
         return
 
     @property
@@ -181,20 +181,26 @@ class GaussMeterGU3001D(object):
         self.logger.info("All data will be in {}".format(unit))
         return unit    
 
-    def measure(self, measurement_time=1):
+    def measure(self, measurement_time=2):
         """
         Measure a single point
 
         Keyword Args:
-            measurement_time (int): average the values over the measurement time
+            measurement_time (int): average the values over the measurement time in seconds
 
         """
         time.sleep(measurement_time) # give the meter time to acquire some data
         data = self.meter.read_all()
+        try:
+            unit = get_unit(data.split(b"\r")[0])
+        except ValueError:
+            unit = "--"
         field = decode_meter_output(data)
         field = field.mean()
+        if self.publish and (self._socket is None):
+            self._setup_port()
         if self.publish:
-            self._socket.send("{} {}".format("GU3001D", field))
+            self._socket.send_string("{} {}; {}".format("GU3001D", field, unit))
         return field         
 
     def measure_continously(self, npoints, interval):
@@ -209,8 +215,7 @@ class GaussMeterGU3001D(object):
             silent (bool): Suppress output
 
         """
-        if self.publish and (self._socket is None):
-            self._setup_port()
+
         for n in range(npoints):
             field = self.measure(measurement_time=interval)
             yield n*interval, field        
