@@ -143,7 +143,6 @@ class GaussMeterGU3001D(object):
             port (int): use this port if publish = True
         """
         self.meter = s.Serial(device) # default settings are ok
-        self.loglevel = loglevel
         self.logger = get_logger(loglevel)
         self.logger.debug("Meter initialized")
         self.publish = publish
@@ -194,6 +193,8 @@ class GaussMeterGU3001D(object):
         data = self.meter.read_all()
         field = decode_meter_output(data)
         field = field.mean()
+        if self.publish:
+            self._socket.send("{} {}".format("GU3001D", field))
         return field         
 
     def measure_continously(self, npoints, interval):
@@ -212,9 +213,6 @@ class GaussMeterGU3001D(object):
             self._setup_port()
         for n in range(npoints):
             field = self.measure(measurement_time=interval)
-            if self.publish:
-                field = 123456
-                self._socket.send("{} {}".format("GU3001D", field))
             yield n*interval, field        
 
  
