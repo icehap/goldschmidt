@@ -9,10 +9,14 @@ import pylab as p
 import seaborn as sb
 import argparse
 
+try:
+    import zmq
+except ImportError:
+    print("Can not import zero MQ")
+
 from . import get_logger
 
 # example word... \r\x0241B20200000052\
-
 
 # Connection settings:
 # Baud rate 9600 
@@ -126,7 +130,8 @@ class GaussMeterGU3001D(object):
     The named instrument
     """
 
-    def __init__(self, port="/dev/ttyUSB0", loglevel=20):
+    def __init__(self, device="/dev/ttyUSB0", loglevel=20,\
+                 publish=False, port=9876):
         """
         Constructor needs read and write access to 
         the port
@@ -134,12 +139,29 @@ class GaussMeterGU3001D(object):
         Keyword Args:
             port (str): The virtual serial connection on a UNIX system
             loglevel (int): 10: debug, 20: info, 30: warnlng....
+            publish (bool): publish data on port
+            port (int): use this port if publish = True
         """
-        self.meter = s.Serial(port) # default settings are ok
+        self.meter = s.Serial(device) # default settings are ok
         self.loglevel = loglevel
         self.logger = get_logger(loglevel)
         self.logger.debug("Meter initialized")
-    
+        self.publish = publish
+        self.publish_port = port
+        self._socket = None
+
+    def _setup_port(self):
+        """
+        Setup the port for publishing
+
+        Returns:
+            None
+        """
+        context = zmq.Context()
+        self._socket = context.socket(zmq.PUB)
+        self._socket.bind("tcp://*:%s" % int(self.port))
+        return
+
     @property
     def unit(self):
         """
@@ -159,12 +181,16 @@ class GaussMeterGU3001D(object):
                 some_data = some_data.split(b"\r")[0]
         self.logger.info("All data will be in {}".format(unit))
         return unit    
-    
-    def measure(self):
+
+    def measure(self, measurement_time=1):
         """
         Measure a single point
+
+        Keyword Args:
+            measurement_time (int): average the values over the measurement time
+
         """
-        time.sleep(1) # give the meter time to acquire some data
+        time.sleep(measurement_time) # give the meter time to acquire some data
         data = self.meter.read_all()
         field = decode_meter_output(data)
         field = field.mean()
@@ -182,12 +208,13 @@ class GaussMeterGU3001D(object):
             silent (bool): Suppress output
 
         """
-        print (self.unit)
+        if self.publish and (self._socket is None):
+            self._setup_port()
         for n in range(npoints):
-            data = self.meter.read_all()
-            field = decode_meter_output(data)
-            field = field.mean()
-            time.sleep(interval)
+            field = self.measure(measurement_time=interval)
+            if self.publish:
+                field = 123456
+                self._socket.send("{} {}".format("GU3001D", field))
             yield n*interval, field        
 
  

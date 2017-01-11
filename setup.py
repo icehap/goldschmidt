@@ -4,7 +4,7 @@ from goldschmidt import __version__
 
 setup(name='goldschmidt',
       version=__version__,
-      description='Readout a GU-3001D Milli-Gauss meter via USB/serial oport',
+      description='Readout a GU-3001D Milli-Gauss meter via USB/serial port on a linux system',
       long_description='Provides commandline readout and gui for the named instrument. For the name see https://en.wikipedia.org/wiki/Carl_Wolfgang_Benjamin_Goldschmidt who was an astronomer, mathematician and physicist and assistant to Gauss',
       author='Achim Stoessl',
       author_email="achim.stoessl@gmail.com",

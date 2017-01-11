@@ -21,8 +21,9 @@ class GaussMeterGraphical(object):
     A TKinter widget to visualize Gauss meter data
     """
 
-    def __init__(self, master, interval=2,\
-                 maxpoints=200, loglevel=20):
+    def __init__(self, master, device="/dev/ttyUSB0", interval=2,\
+                 maxpoints=200, loglevel=20,
+                 publish=True, port=9876):
         """
         Initialize the application window
 
@@ -53,7 +54,10 @@ class GaussMeterGraphical(object):
         self.sub_menu_plot.add_command(label="Log to file", command=self.init_datafile)
 
         # physics quantities
-        self.meter = magneto.GaussMeterGU3001D(loglevel=loglevel)
+        self.meter = magneto.GaussMeterGU3001D(device=device,\
+                                               loglevel=loglevel,\
+                                               publish=publish,\
+                                               port=port)
         self.start_time = time.monotonic()
         self.interval = interval
         self.maxpoints = maxpoints
