@@ -12,7 +12,7 @@ from os.path import exists as _exists
 from shutil import copy as _copy
 from datetime import datetime as _datetime
 
-__version__ = "0.0.13"
+__version__ = "0.0.14"
 __all__ = ["magnetometer","gui"]
 
 _appdir = _split(__file__)[0]
