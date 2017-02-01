@@ -5,8 +5,8 @@ import tkinter
 
 import pylab as p
 
-from goldschmidt.magnetometer import GaussMeterGU3001D
-from goldschmidt.gui import GaussMeterGraphical
+from goldschmidt.magnetometer import GaussMeterGU3001D, ThermometerTM947SD, identify_instrument
+from goldschmidt.gui import LutronInstrumentGraphical
 
 
 
@@ -31,6 +31,8 @@ if __name__ == "__main__":
                         default=9876, type=int)
     parser.add_argument("--publish", help="Open port and stream data",
                         default=False, action="store_true")
+    parser.add_argument("--channel", help="Select channel if multichannel instrument",
+                        default=1, type=int)
 
     args = parser.parse_args()
 
@@ -46,11 +48,17 @@ if __name__ == "__main__":
         #    print("Can not use style file!")
 
         window = tkinter.Tk()
-        window.title("Milli-Gauss Meter GU3001D")
-        app = GaussMeterGraphical(window, device=args.device, interval=args.interval,\
-                                  maxpoints=args.maxpoints,
-                                  loglevel=loglevel, port=args.port,
-                                  publish=args.publish)
+        # setup an instrument and find out what it is
+        meter = GaussMeterGU3001D(device=args.device, loglevel=loglevel, publish=args.publish, port=args.port)
+        if not identify_instrument(meter) == "Magnetometer":
+            meter = ThermometerTM947SD(device=args.device, loglevel=loglevel, publish=args.publish, port=args.port)
+            meter.select_channel(args.channel)
+            window.title("Thermometer TM947SD")
+        else:
+            window.title("Milli-Gauss Meter GU3001D")
+
+        app = LutronInstrumentGraphical(window, meter, interval=args.interval,\
+                                  maxpoints=args.maxpoints, loglevel=loglevel)
         window.mainloop()
 
     else:

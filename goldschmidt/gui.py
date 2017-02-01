@@ -16,14 +16,13 @@ from matplotlib.figure import Figure
 from . import magnetometer as magneto 
 from . import __version__, get_logger, create_timestamped_file
 
-class GaussMeterGraphical(object):
+class LutronInstrumentGraphical(object):
     """
     A TKinter widget to visualize Gauss meter data
     """
 
-    def __init__(self, master, device="/dev/ttyUSB0", interval=2,\
-                 maxpoints=200, loglevel=20,
-                 publish=True, port=9876):
+    def __init__(self, master, meter,  interval=2,\
+                 maxpoints=200, loglevel=20):
         """
         Initialize the application window
 
@@ -33,7 +32,7 @@ class GaussMeterGraphical(object):
         Keyword Args:
             interval (int): Update the plot every interval seconds
             maxpoints (int): Max number of points visible in the plot
-            loglevel (int): 10: debug, 20: info, 30: warnlng....
+
 
         """
 
@@ -54,10 +53,7 @@ class GaussMeterGraphical(object):
         self.sub_menu_plot.add_command(label="Log to file", command=self.init_datafile)
 
         # physics quantities
-        self.meter = magneto.GaussMeterGU3001D(device=device,\
-                                               loglevel=loglevel,\
-                                               publish=publish,\
-                                               port=port)
+        self.meter = meter
         self.start_time = time.monotonic()
         self.interval = interval
         self.maxpoints = maxpoints
@@ -83,8 +79,9 @@ class GaussMeterGraphical(object):
         """
 
         unit = self.meter.unit
+        axis_label = self.meter.axis_label
         self.ax.set_xlabel("measurement time [s]")
-        self.ax.set_ylabel("Magnetic field [{}]".format(unit))
+        self.ax.set_ylabel("{} [{}]".format(axis_label, unit))
         self.line, = self.ax.plot(range(0), color="blue", lw=3)
 
     @staticmethod

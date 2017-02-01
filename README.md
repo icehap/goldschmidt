@@ -1,5 +1,5 @@
 # goldschmidt
-Read out a DU-3001D Milli-Gauss meter
+Read out a DU-3001D Milli-Gauss meter from Lutron or the Lutron TM-947SD thermometer
 
 ## Requirements:
 
