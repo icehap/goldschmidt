@@ -6,7 +6,6 @@ import serial as s
 import numpy as np
 import time
 import pylab as p
-import seaborn as sb
 import argparse
 import abc
 
