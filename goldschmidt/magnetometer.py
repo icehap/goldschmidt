@@ -21,22 +21,23 @@ from . import get_logger
 # example word... \r\x0241B20200000052\
 
 # Connection settings:
-# Baud rate 9600 
+# Baud rate 9600
 # Parity  No parity
 # Data bit no. 8 Data bits
-# Stop bit  1 Stop 
+# Stop bit  1 Stop
 #
+
 
 def save_execute(func):
     """
-    Calls func with args, kwargs and 
+    Calls func with args, kwargs and
     returns nan when func raises a value error
-    
+
     FIXME: treatment of the errors!
     """
-    def wrap_f(*args,**kwargs):
+    def wrap_f(*args, **kwargs):
         try:
-            return func(*args,**kwargs)
+            return func(*args, **kwargs)
         except ValueError:
             return np.nan
     return wrap_f
@@ -63,9 +64,9 @@ def identify_instrument(instrument):
     else:
         return "Thermometer"
 
-#@save_execute
 
-class LutronAbstractBaseInstrumentProxy(with_metaclass(abc.ABCMeta,object), object):
+class LutronAbstractBaseInstrumentProxy(
+        with_metaclass(abc.ABCMeta, object), object):
     """
     Proxy to access instruments over the network
 
@@ -83,7 +84,8 @@ class LutronAbstractBaseInstrumentProxy(with_metaclass(abc.ABCMeta,object), obje
 
     def __init__(self, ip, port, pull_interval=10):
         """
-        Subscribe to a Lutron instrument which publishes data with a ZMQ publish socket.
+        Subscribe to a Lutron instrument which
+        publishes data with a ZMQ publish socket.
         Lutron instrument needs to publish at ip and port
 
         Args:
@@ -91,8 +93,8 @@ class LutronAbstractBaseInstrumentProxy(with_metaclass(abc.ABCMeta,object), obje
             port (int): port where guassmeter is publishing
 
         Keyword Args:
-            pull_interval (int): pull data new data every pull_interval seconds, use
-            buffered value in between
+            pull_interval (int): pull data new data every
+            pull_interval seconds, use buffered value in between
         """
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB)
@@ -112,7 +114,8 @@ class LutronAbstractBaseInstrumentProxy(with_metaclass(abc.ABCMeta,object), obje
         """
         self.last_pull = time.monotonic()
         try:
-            self.buffer = self.pattern.search(self.socket.recv().decode()).groupdict()
+            self.buffer = self.pattern.search(
+                self.socket.recv().decode()).groupdict()
         except Exception as e:
             logger.debug("Problem acquiring data {}".format(e))
         self.buffer["value"] = float(self.buffer["value"])
@@ -120,7 +123,8 @@ class LutronAbstractBaseInstrumentProxy(with_metaclass(abc.ABCMeta,object), obje
 
     def pull(self):
         """
-        Get new data or returns the data in the buffer dependent on self.pull_interval
+        Get new data or returns the data in the buffer
+        dependent on self.pull_interval
 
         Returns:
             dict
@@ -131,14 +135,14 @@ class LutronAbstractBaseInstrumentProxy(with_metaclass(abc.ABCMeta,object), obje
             return self.buffer
 
 
-
-class LutronAbstractBaseInstrument(with_metaclass(abc.ABCMeta,object), object):
+class LutronAbstractBaseInstrument(
+        with_metaclass(abc.ABCMeta, object), object):
     """
     Common abstract base class for all Lutron instruments
 
     """
 
-    def __init__(self, device="/dev/ttyUSB0", loglevel=20,\
+    def __init__(self, device="/dev/ttyUSB0", loglevel=20,
                  publish=False, port=9876):
         """
         Constructor needs read and write access to
@@ -150,7 +154,7 @@ class LutronAbstractBaseInstrument(with_metaclass(abc.ABCMeta,object), object):
             publish (bool): publish data on port
             port (int): use this port if publish = True
         """
-        self.meter = s.Serial(device) # default settings are ok
+        self.meter = s.Serial(device)  # default settings are ok
         self.logger = get_logger(loglevel)
         self.logger.debug("Meter initialized")
         self.publish = publish
@@ -200,7 +204,9 @@ class LutronAbstractBaseInstrument(with_metaclass(abc.ABCMeta,object), object):
             try:
                 unit = self.get_unit(some_data)
             except ValueError:
-                self.logger.debug("Can not get unit from {}, trying again...".format(some_data))
+                self.logger.debug(
+                    "Can not get unit from {}, trying again...".format(
+                        some_data))
                 time.sleep(2)
                 some_data = self.meter.read_all()
                 some_data = some_data.split(b"\r")[0]
@@ -261,10 +267,11 @@ class LutronAbstractBaseInstrument(with_metaclass(abc.ABCMeta,object), object):
         Measure a single point
 
         Keyword Args:
-            measurement_time (int): average the values over the measurement time in seconds
+            measurement_time (int): average the values
+            over the measurement time in seconds
 
         """
-        time.sleep(measurement_time) # give the meter time to acquire some data
+        time.sleep(measurement_time)  # give the meter time to acquire data
         data = self.meter.read_all()
         try:
             unit = self.get_unit(data.split(b"\r")[0])
@@ -275,8 +282,10 @@ class LutronAbstractBaseInstrument(with_metaclass(abc.ABCMeta,object), object):
         if self.publish and (self._socket is None):
             self._setup_port()
         if self.publish:
-            self._socket.send_string("{} {}; {}".format("GU3001D", field, unit))
+            self._socket.send_string(
+                "{} {}; {}".format("GU3001D", field, unit))
         return field
+
 
 class GaussMeterProxy(LutronAbstractBaseInstrumentProxy, object):
     """
@@ -286,7 +295,8 @@ class GaussMeterProxy(LutronAbstractBaseInstrumentProxy, object):
 
     @property
     def pattern(self):
-        pattern = re.compile("GU3001D\s(?P<value>[0-9-.]*);\s+(?P<unit>(mG)|(uT))")
+        pattern = re.compile(
+            "GU3001D\s(?P<value>[0-9-.]*);\s+(?P<unit>(mG)|(uT))")
         return pattern
 
 
@@ -315,8 +325,6 @@ class GaussMeterGU3001D(LutronAbstractBaseInstrument):
             raise ValueError("Unit not understood {}".format(unit))
         return unit
 
-
-
     def decode_output(self, data):
         """
         Decode the bytestring with
@@ -343,7 +351,7 @@ class GaussMeterGU3001D(LutronAbstractBaseInstrument):
             data (bytes): A single word of length 16
 
         """
-        #### from the manual...
+        # ### from the manual...
         # http://www.sunwe.com.tw/lutron/GU-3001eop.pdf
         # The 16 digits data stream will be displayed in the
         # following  format :
@@ -414,7 +422,7 @@ class ThermometerTM947SD(LutronAbstractBaseInstrument):
             data (bytes): A single word of length 16
 
         """
-        #### from the manual...
+        # ### from the manual...
         # http://www.sunwe.com.tw/lutron/GU-3001eop.pdf
         # The 16 digits data stream will be displayed in the
         # following  format :
@@ -452,7 +460,8 @@ class ThermometerTM947SD(LutronAbstractBaseInstrument):
 
         """
         data = data.split(b"\r")
-        data = [self.decode_fields(word) for word in data if self.decode_channel(word) == self.active_channel]
+        data = [self.decode_fields(word) for word in data
+                if self.decode_channel(word) == self.active_channel]
         data = np.array(data)
         data = data[np.isfinite(data)]
         return data
@@ -472,4 +481,3 @@ class ThermometerTM947SD(LutronAbstractBaseInstrument):
         else:
             raise ValueError("Unit not understood {}".format(unit))
         return unit
- 

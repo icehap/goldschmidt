@@ -2,9 +2,8 @@
 Graphical user interface with the tkinter package to visualize data
 readout from a Milli Gauss meter
 """
-
-
-import tkinter, time
+import tkinter
+import time
 import tkinter.messagebox
 import numpy as np
 import pylab as p
@@ -12,15 +11,16 @@ import pylab as p
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from . import magnetometer as magneto 
+from . import magnetometer as magneto
 from . import __version__, get_logger, create_timestamped_file
+
 
 class LutronInstrumentGraphical(object):
     """
     A TKinter widget to visualize Gauss meter data
     """
 
-    def __init__(self, master, meter,  interval=2,\
+    def __init__(self, master, meter,  interval=2,
                  maxpoints=200, loglevel=20):
         """
         Initialize the application window
@@ -47,9 +47,11 @@ class LutronInstrumentGraphical(object):
         self.sub_menu_plot = tkinter.Menu(self.menu_bar)
         self.menu_bar.add_cascade(label='Plot', menu=self.sub_menu_plot)
         self.menu_bar.add_cascade(label='Help', menu=self.sub_menu_help)
-        self.sub_menu_help.add_command(label='About', command=self._about_handler)
+        self.sub_menu_help.add_command(label='About',
+                                       command=self._about_handler)
         self.sub_menu_plot.add_command(label="Reset", command=self.init_plot)
-        self.sub_menu_plot.add_command(label="Log to file", command=self.init_datafile)
+        self.sub_menu_plot.add_command(label="Log to file",
+                                       command=self.init_datafile)
 
         # physics quantities
         self.meter = meter
@@ -109,7 +111,8 @@ class LutronInstrumentGraphical(object):
         # so that it does not get too crammed
         index = 0
         if len(secs) >= self.maxpoints:
-            self.logger.debug("Restricting line to {} points".format(self.maxpoints))
+            self.logger.debug("Restricting line to {} points".format(
+                self.maxpoints))
             index = 1
 
         secs = np.append(secs[index:], sec)
@@ -147,9 +150,12 @@ class LutronInstrumentGraphical(object):
         if self.datafile_active:
             self.datafile.close()
 
-        self.datafilename = create_timestamped_file("GAUSSMETER_GU3001D_", file_ending=".dat")
+        self.datafilename = create_timestamped_file("GAUSSMETER_GU3001D_",
+                                                    file_ending=".dat")
         self.logger.info("Writing to file {}".format(self.datafilename))
-        tkinter.messagebox.showinfo("Writing to a file!", "Writing data to file {}".format(self.datafilename))
+        tkinter.messagebox.showinfo(
+            "Writing to a file!",
+            "Writing data to file {}".format(self.datafilename))
         self.datafile = open(self.datafilename, "w")
         self.datafile.write("# seconds {}\n".format(self.meter.unit))
         self.datafile_active = True
@@ -160,5 +166,3 @@ class LutronInstrumentGraphical(object):
         """
         if self.datafile_active:
             self.datafile.close()
-
-

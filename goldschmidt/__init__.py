@@ -17,8 +17,8 @@ __all__ = ["magnetometer", "Lutron instruments", "gui"]
 
 _appdir = _split(__file__)[0]
 
-LOGFORMAT = '[%(asctime)s] %(levelname)s: %(module)s(%(lineno)d):   %(message)s'
-STYLE_BASEFILE_STD = _join(_appdir,"goldschmidt.mplstyle")
+LOGFORMAT = '[%(asctime)s] %(levelname)s: %(module)s(%(lineno)d):  %(message)s'
+STYLE_BASEFILE_STD = _join(_appdir, "goldschmidt.mplstyle")
 
 logging.captureWarnings(True)
 
@@ -48,8 +48,10 @@ def create_timestamped_file(filename, file_ending=".log"):
         filename = filename + "." + str(filecount)
         filecount += 1
         if filecount >= 60:
-            raise SystemError("More than 1 file per second, this is insane.. aborting")
+            raise SystemError("More than 1 file per second, "
+                              "this is insane.. aborting")
     return filename
+
 
 def get_logger(loglevel, logfile=None):
     """
@@ -93,9 +95,11 @@ def install_styles(style_default=STYLE_BASEFILE_STD):
         style_default (str): location of style file to use by defautl
    """
 
-    mpl_styledir = _join(mpl_configdir(),"stylelib")
-    assert _exists(style_default), "STYLEFILE {} missing... indicates a problem with some paths or corrupt packege.\
-                                    Check source code location".format(style_default)
-    _copy(style_default,mpl_styledir)
+    mpl_styledir = _join(mpl_configdir(), "stylelib")
+    assert _exists(style_default), \
+        "STYLEFILE {} missing... indicates a problem with some paths \
+        or corrupt package. Check source code location".format(style_default)
+    _copy(style_default, mpl_styledir)
+
 
 install_styles()
