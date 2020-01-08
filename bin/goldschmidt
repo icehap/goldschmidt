@@ -11,7 +11,6 @@ from goldschmidt.gui import LutronInstrumentGraphical
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         usage="magnetometer.py OPTIONS \n\nUse a MilliGaussMeter GU-3001D. " +
               "The script might require root privileges to access " +
@@ -76,6 +75,12 @@ if __name__ == "__main__":
                                   loglevel=loglevel,
                                   port=args.port,
                                   publish=args.publish)
+        if not identify_instrument(meter) == "Magnetometer":
+            meter = ThermometerTM947SD(device=args.device,
+                                       loglevel=loglevel,
+                                       port=args.port,
+                                       publish=args.publish)
+            meter.select_channel(args.channel)
         for seconds, fields in meter.measure_continously(args.npoints,
                                                          args.interval):
             if not args.silent:
