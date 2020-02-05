@@ -4,13 +4,24 @@ from goldschmidt.magnetometer import ThermometerTM947SD
 import pandas as pd
 import os
 import click
+import time
 
 
 @click.command()
 @click.argument('device')
 @click.argument('channel', nargs=-1, type=int)
 @click.argument('filename', type=click.Path())
-def main(device, channel, filename):
+@click.option('sleep_time', '--s', type=float, default=0)
+def main(device, channel, filename, sleep_time):
+    if sleep_time == 0:
+        record_temp(device, channel, filename)
+    else:
+        while True:
+            record_temp(device, channel, filename)
+            time.sleep(sleep_time)
+
+
+def record_temp(device, channel, filename):
     if not isinstance(channel, list):
         channel = list(channel)
 
